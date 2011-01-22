@@ -4,7 +4,7 @@ a slow control persistence database.  The scripts must be run in
 the following order, or they will not work (there are dependencies):
 
     1) create_support.sql
-    2) create_tables.sql
+    2) create_tables.sql <- note you need to run meta_tables to get this!
     3) create_func_trig.sql
 
 After these are run, the database cluster should be ready for
