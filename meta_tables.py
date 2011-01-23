@@ -16,7 +16,7 @@ def zeropad(s, w=2):
 
 # often used pattern, here's a utility function
 def ints_to_strings(ints):
-    strings = [zeropad(s,w) for (s,w) in [(str(x),w) for (x,w) in ints]]
+    strings = [s for (s,w) in [(str(x),w) for (x,w) in ints]]
     return tuple(strings)
 
 # generate an sql string that creates a weekly table.
@@ -46,7 +46,7 @@ def emit_weekly_hourly_table(year,day,hr):
 def emit_master_table():
     f_meas_id = "meas_id int primary key default nextval('measurement_ids')"
     f_ts = "ts timestamp not null"
-    f_card = "card card_slot not null"
+    f_card = "card varchar not null"
     f_channel = "channel integer not null"
     f_host = "hostname varchar not null"
     f_value = "value real not null"
@@ -116,6 +116,11 @@ def main(sysargs):
     # emit weekly tablenames
         for month in range(1,13):
             outfile.write(emit_monthly_table(year,month) + "\n")
+
+    # done
+    print("output written on create_tables.sql")
+    exit(0)
+
 # entry
 if __name__ == '__main__':
     main(sys.argv)
