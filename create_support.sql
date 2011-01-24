@@ -9,3 +9,7 @@ create type card_slot as enum('cardA','cardB','cardC','cardD');
 
 -- A dedicated sequence generator for measurement ids
 create sequence measurement_ids;
+
+-- A dedicated sequence generator for average ids.  used internally,
+-- not useful to humans
+create sequence avg_ids;

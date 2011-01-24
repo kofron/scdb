@@ -19,7 +19,7 @@ def ints_to_strings(ints):
     strings = [s for (s,w) in [(str(x),w) for (x,w) in ints]]
     return tuple(strings)
 
-# generate an sql string that creates a weekly table.
+# generate an sql string that creates a monthly table.
 def emit_monthly_table(year, month):
     (yearstr, monthstr) = ints_to_strings([(year,4),(month,2)])
     yr_const = "(extract(year from ts)::int = {0})".format(yearstr)
@@ -28,12 +28,13 @@ def emit_monthly_table(year, month):
     res = "create table y{0}m{1} ({2}) inherits ({3});"
     return res.format(yearstr,monthstr,ov_const,master_name())
 
-# generate an sql string that creates a weekly daily summary
-# table
-def emit_weekly_daily_table(year,day):
-    (yearstr, daystr) = ints_to_strings([(year,4),(day,3)])
-    res = "create table y{0}d{1}avgDay () inherits ({2});"
-    return res.format(yearstr,daystr,day_master_name())
+# emit an sql string that creates a daily summary table.  these tables
+# are partitions on the dailyAvg table.
+def emit_daily_avg_partition(year):
+    (yearstr,) = ints_to_strings([(year,4)])
+    yr_const = "check(extract(year from day)::int = {0})".format(yearstr)
+    res = "create table y{0}avgDay ({1}) inherits ({2});"
+    return res.format(yearstr,yr_const,day_master_name())
 
 # generate an sql string that creates a weekly hourly summary
 # table
@@ -71,6 +72,41 @@ def emit_master_table():
 # the name of the master table
 def master_name():
     return "meas_master"
+
+# the daily average table
+def emit_daily_avg_table():
+    f_rowid = "row_id int primary key default nextval('avg_ids')" 
+    f_upcnt = "ucount int not null"
+    f_host = "hostname varchar not null"
+    f_card = "card varchar not null"
+    f_channel = "channel integer not null"
+    f_date = "day date not null"
+    f_min  = "minval real not null"
+    f_max  = "maxval real not null"
+    f_avg  = "avgval real not null"
+    
+    return "create table" +\
+        " " +\
+        day_master_name() +\
+        " (" +\
+        f_rowid +\
+        "," +\
+        f_upcnt +\
+        "," +\
+        f_host +\
+        "," +\
+        f_card +\
+        "," +\
+        f_channel +\
+        "," +\
+        f_date +\
+        "," +\
+        f_min +\
+        "," +\
+        f_max +\
+        "," +\
+        f_avg +\
+        ");"
 
 # the name of the hourly master table
 def hour_master_name():
@@ -112,8 +148,13 @@ def main(sysargs):
     # emit master tablename
     outfile.write(emit_master_table() + "\n")
 
+    # emit daily master tablename
+    outfile.write(emit_daily_avg_table() + "\n")
+
     for year in range(year_begin, year_end + 1):
-    # emit weekly tablenames
+        # emit daily avg partitions
+        outfile.write(emit_daily_avg_partition(year) + "\n")
+        # emit weekly tablenames
         for month in range(1,13):
             outfile.write(emit_monthly_table(year,month) + "\n")
 
