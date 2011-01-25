@@ -48,7 +48,9 @@ create or replace function update_daily_avg()
 		       and
 		       dm.card = NEW.card
 		       and 
-		       dm.channel = NEW.channel);
+		       dm.channel = NEW.channel
+		       and
+		       extract(year from dm.day)::int = year);
 		if not found then
 	  	   execute 'insert into '
 		   	|| tablename
