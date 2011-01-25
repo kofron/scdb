@@ -1,0 +1,2 @@
+-- create_indices.sql
+-- build performance enhancing indices over table data.
