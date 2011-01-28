@@ -36,12 +36,14 @@ def emit_daily_avg_partition(year):
     res = "create table y{0}avgDay ({1}) inherits ({2});"
     return res.format(yearstr,yr_const,day_master_name())
 
-# generate an sql string that creates a weekly hourly summary
-# table
-def emit_weekly_hourly_table(year,day,hr):
-    (yearstr, daystr, hrstr) = ints_to_strings([(year,4),(day,3),(hr,2)])
-    res = "create table y{0}d{1}h{2}avgHr () inherits ({3});"
-    return res.format(yearstr, daystr, hrstr,hour_master_name())
+# emit the sql string to create an hourly summary table.  these tables
+# are partitions on the hourlyAvg table.
+def emit_hourly_avg_partition(year):
+    (yearstr,) = ints_to_strings([(year,4)])
+    yr_const = "(extract(year from day)::int = {0})".format(yearstr)
+    ov_const = "check({0})".format(yr_const)
+    res = "create table y{0}avgHour ({1}) inherits ({2});"
+    return res.format(yearstr, ov_const, hour_master_name())
 
 # generate the sql statement that will create the master table
 def emit_master_table():
@@ -108,6 +110,44 @@ def emit_daily_avg_table():
         f_avg +\
         ");"
 
+# the daily average table
+def emit_hourly_avg_table():
+    f_rowid = "row_id int primary key default nextval('avg_ids')" 
+    f_upcnt = "ucount int not null"
+    f_host = "hostname varchar not null"
+    f_card = "card varchar not null"
+    f_channel = "channel integer not null"
+    f_date = "day date not null"
+    f_hour = "hr int not null"
+    f_min  = "minval real not null"
+    f_max  = "maxval real not null"
+    f_avg  = "avgval real not null"
+    
+    return "create table" +\
+        " " +\
+        hour_master_name() +\
+        " (" +\
+        f_rowid +\
+        "," +\
+        f_upcnt +\
+        "," +\
+        f_host +\
+        "," +\
+        f_card +\
+        "," +\
+        f_channel +\
+        "," +\
+        f_date +\
+        "," +\
+        f_hour +\
+        "," +\
+        f_min +\
+        "," +\
+        f_max +\
+        "," +\
+        f_avg +\
+        ");"
+
 # the name of the hourly master table
 def hour_master_name():
     return "hourly_master"
@@ -151,12 +191,20 @@ def main(sysargs):
     # emit daily master tablename
     outfile.write(emit_daily_avg_table() + "\n")
 
+    # emit hourly master table
+    outfile.write(emit_hourly_avg_table() + "\n")
+
     for year in range(year_begin, year_end + 1):
         # emit daily avg partitions
         outfile.write(emit_daily_avg_partition(year) + "\n")
+
+        # emit hourly avg partitions
+        outfile.write(emit_hourly_avg_partition(year) + "\n")
+
         # emit weekly tablenames
         for month in range(1,13):
             outfile.write(emit_monthly_table(year,month) + "\n")
+
 
     # done
     print("output written on create_tables.sql")
