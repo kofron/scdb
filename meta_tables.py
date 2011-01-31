@@ -38,12 +38,13 @@ def emit_daily_avg_partition(year):
 
 # emit the sql string to create an hourly summary table.  these tables
 # are partitions on the hourlyAvg table.
-def emit_hourly_avg_partition(year):
-    (yearstr,) = ints_to_strings([(year,4)])
+def emit_hourly_avg_partition(year,month):
+    (yearstr,monthstr) = ints_to_strings([(year,4),(month,2)])
     yr_const = "(extract(year from day)::int = {0})".format(yearstr)
-    ov_const = "check({0})".format(yr_const)
-    res = "create table y{0}avgHour ({1}) inherits ({2});"
-    return res.format(yearstr, ov_const, hour_master_name())
+    mo_const = "(extract(month from day)::int = {0})".format(monthstr)
+    ov_const = "check({0} and {1})".format(yr_const,mo_const)
+    res = "create table y{0}m{1}avgHour ({2}) inherits ({3});"
+    return res.format(yearstr, monthstr, ov_const, hour_master_name())
 
 # generate the sql statement that will create the master table
 def emit_master_table():
@@ -198,12 +199,11 @@ def main(sysargs):
         # emit daily avg partitions
         outfile.write(emit_daily_avg_partition(year) + "\n")
 
-        # emit hourly avg partitions
-        outfile.write(emit_hourly_avg_partition(year) + "\n")
-
-        # emit weekly tablenames
         for month in range(1,13):
             outfile.write(emit_monthly_table(year,month) + "\n")
+
+            # emit hourly avg partitions
+            outfile.write(emit_hourly_avg_partition(year,month) + "\n")
 
 
     # done
