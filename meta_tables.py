@@ -43,8 +43,12 @@ def emit_hourly_avg_partition(year,month):
     yr_const = "(extract(year from day)::int = {0})".format(yearstr)
     mo_const = "(extract(month from day)::int = {0})".format(monthstr)
     ov_const = "check({0} and {1})".format(yr_const,mo_const)
-    res = "create table y{0}m{1}avgHour ({2}) inherits ({3});"
-    return res.format(yearstr, monthstr, ov_const, hour_master_name())
+    tablestr = "y{0}m{1}avgHour".format(yearstr, monthstr)
+    tres = "create table {0} ({1}) inherits ({2});"
+    ires = "create index {0}Idx on {0} ({1},{2},{3},{4});"
+    tres_fmt = tres.format(tablestr, ov_const, hour_master_name())
+    ires_fmt = ires.format(tablestr, "day", "hostname", "card", "channel")
+    return tres_fmt + ires_fmt
 
 # generate the sql statement that will create the master table
 def emit_master_table():
