@@ -107,7 +107,7 @@ def emit_daily_avg_table():
 	f_host = "hostname varchar not null"
 	f_card = "card varchar not null"
 	f_channel = "channel integer not null"
-	f_date = "day date not null"
+	f_date = "measdate date not null"
 	f_min  = "minval real not null"
 	f_max  = "maxval real not null"
 	f_avg  = "avgval real not null"
@@ -139,7 +139,7 @@ def emit_daily_avg_table():
 # are partitions on the dailyAvg table.
 def emit_daily_avg_partition(year):
 	(yearstr,) = ints_to_strings([(year,4)])
-	yr_const = "check(extract(year from day)::int = {0})".format(yearstr)
+	yr_const = "check(extract(year from measdate)::int = {0})".format(yearstr)
 	res = "create table y{0}avgDay ({1}) inherits ({2});"
 	return res.format(yearstr,yr_const,day_master_name())
 
@@ -150,7 +150,7 @@ def emit_hourly_avg_table():
 	f_host = "hostname varchar not null"
 	f_card = "card varchar not null"
 	f_channel = "channel integer not null"
-	f_date = "day date not null"
+	f_date = "measdate date not null"
 	f_hour = "hr int not null"
 	f_min  = "minval real not null"
 	f_max  = "maxval real not null"
@@ -185,14 +185,14 @@ def emit_hourly_avg_table():
 # are partitions on the hourlyAvg table.
 def emit_hourly_avg_partition(year,month):
 	(yearstr,monthstr) = ints_to_strings([(year,4),(month,2)])
-	yr_const = "(extract(year from day)::int = {0})".format(yearstr)
-	mo_const = "(extract(month from day)::int = {0})".format(monthstr)
+	yr_const = "(extract(year from measdate)::int = {0})".format(yearstr)
+	mo_const = "(extract(month from measdate)::int = {0})".format(monthstr)
 	ov_const = "check({0} and {1})".format(yr_const,mo_const)
 	tablestr = "y{0}m{1}avgHour".format(yearstr, monthstr)
 	tres = "create table {0} ({1}) inherits ({2});"
 	ires = "create index {0}Idx on {0} ({1},{2},{3},{4});"
 	tres_fmt = tres.format(tablestr, ov_const, hour_master_name())
-	ires_fmt = ires.format(tablestr, "day", "hostname", "card", "channel")
+	ires_fmt = ires.format(tablestr, "measdate", "hostname", "card", "channel")
 	return tres_fmt + ires_fmt
 
 # the minute average table
@@ -202,7 +202,7 @@ def emit_minute_avg_table():
 	f_host = "hostname varchar not null"
 	f_card = "card varchar not null"
 	f_channel = "channel integer not null"
-	f_date = "day date not null"
+	f_date = "measdate date not null"
 	f_hour = "hr int not null"
 	f_minute = "min int not null"
 	f_min  = "minval real not null"
@@ -240,14 +240,14 @@ def emit_minute_avg_table():
 # are partitions on the hourlyAvg table.
 def emit_minute_avg_partition(year,month):
 	(yearstr,monthstr) = ints_to_strings([(year,4),(month,2)])
-	yr_const = "(extract(year from day)::int = {0})".format(yearstr)
-	mo_const = "(extract(month from day)::int = {0})".format(monthstr)
+	yr_const = "(extract(year from measdate)::int = {0})".format(yearstr)
+	mo_const = "(extract(month from measdate)::int = {0})".format(monthstr)
 	ov_const = "check({0} and {1})".format(yr_const,mo_const)
 	tablestr = "y{0}m{1}avgMinute".format(yearstr, monthstr)
 	tres = "create table {0} ({1}) inherits ({2});"
 	ires = "create index {0}Idx on {0} ({1},{2},{3},{4});"
 	tres_fmt = tres.format(tablestr, ov_const, min_master_name())
-	ires_fmt = ires.format(tablestr, "day", "hostname", "card", "channel")
+	ires_fmt = ires.format(tablestr, "measdate", "hostname", "card", "channel")
 	return tres_fmt + ires_fmt
 
 ############
@@ -284,8 +284,11 @@ def main(sysargs):
 	# emit master tablename
 	outfile.write(emit_master_table()+"\n")
 
-    # emit daily master tablename
+        # emit daily master tablename
 	outfile.write(emit_daily_avg_table()+"\n")
+
+        # emit daily average staging area
+        outfile.write(emit_daily_stage_table()+"\n")
 
     # emit hourly master table
 	outfile.write(emit_hourly_avg_table()+"\n")                
