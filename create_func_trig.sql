@@ -173,12 +173,14 @@ create or replace function update_daily_avg()
        end		    
 $$ language plpgsql;
 
--- flush_and_destroy_daily (function)
--- this is a function that scans the daily_avg_stage table for stale
--- data (defined as older than 20 days), and flushes it to the long
--- term (much larger) daily average tables.  rows successfully committed
--- to the long term daily average tables are deleted from the staging 
--- table.
+-- flush_and_destroy_x (functions)
+-- these are functions that scans the x_avg_stage tables for stale
+-- data (defined as older than 20 x-s), and flushes it to the long
+-- term (much larger) average tables.  rows successfully committed
+-- to the long term x average tables are deleted from the staging 
+-- tables.
+
+-- daily version
 create or replace function flush_and_destroy_daily()
        returns integer as $$
        declare
@@ -194,6 +196,50 @@ create or replace function flush_and_destroy_daily()
 				  where
 					row_id = srow.row_id; 
 		    	   insert into daily_master values(srow.*);
+		    end;	   
+		end loop;
+		return 0;
+       end    
+$$ language plpgsql;
+
+-- hourly version
+create or replace function flush_and_destroy_hourly()
+       returns integer as $$
+       declare
+	srow hourly_master%rowtype;
+       begin
+		for srow in 
+		    select * from hourly_avg_stage s
+  		    where extract(hour from age(s.measdate)) < -20
+		loop
+		    begin  
+		    	   delete from 
+					hourly_avg_stage
+				  where
+					row_id = srow.row_id; 
+		    	   insert into hourly_master values(srow.*);
+		    end;	   
+		end loop;
+		return 0;
+       end    
+$$ language plpgsql;
+
+-- minute version
+create or replace function flush_and_destroy_minute()
+       returns integer as $$
+       declare
+	srow minute_master%rowtype;
+       begin
+		for srow in 
+		    select * from minute_avg_stage s
+  		    where extract(minute from age(s.measdate)) < -20
+		loop
+		    begin  
+		    	   delete from 
+					minute_avg_stage
+				  where
+					row_id = srow.row_id; 
+		    	   insert into minute_master values(srow.*);
 		    end;	   
 		end loop;
 		return 0;
