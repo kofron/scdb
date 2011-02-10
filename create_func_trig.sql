@@ -207,7 +207,7 @@ create or replace function update_hourly_avg()
 				(ucount,hostname,card,hour,
 			  	channel,measdate,minval,maxval,avgval) 
 			  values
-				(1,NEW.hostname,NEW.card,newhr
+				(1,NEW.hostname,NEW.card,newhr,
 				NEW.channel,newday,
 				NEW.value,NEW.value,NEW.value);
 		else
