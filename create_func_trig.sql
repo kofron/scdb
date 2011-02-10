@@ -232,7 +232,7 @@ create or replace function update_hourly_avg()
 				row_id = prow.row_id;
 		end if;
 		perform flush_and_destroy_hourly();	
-		return NULL;
+		return NEW;
        end		    
 $$ language plpgsql;  
 
@@ -298,7 +298,7 @@ create or replace function update_minute_avg()
 				row_id = prow.row_id;
 		end if;
 		perform flush_and_destroy_minute();	
-		return NULL;
+		return NEW;
        end		    
 $$ language plpgsql;
 
@@ -386,6 +386,14 @@ create trigger master_routing
 create trigger update_daily_averages
        before insert on meas_master
        for each row execute procedure update_daily_avg();
+
+create trigger update_hourly_averages
+       before insert on meas_master
+       for each row execute procedure update_hourly_avg();
+
+create trigger update_minute_averages
+       before insert on meas_master
+       for each row execute procedure update_minute_avg();
 
 create trigger daily_routing
        before insert on daily_master
