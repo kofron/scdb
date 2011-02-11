@@ -597,53 +597,32 @@ create trigger master_routing
 
 create trigger update_daily_averages
 		before insert on meas_master
+		when (
+			extract(year from age(now(),NEW.ts)) = 0
+			and
+			extract(day from age(now(), NEW.ts)) < 20
+		)
 		for each row execute procedure update_daily_avg();  
-		
-create trigger stale_update_daily_averages
-       before insert on meas_master
-       for each row 
-       when (
-       	    extract(day from age(now(), NEW.ts)) > 20
-	    and
-	    extract(year from age(now(), NEW.ts)) = 0
-	    )
-       execute procedure stale_update_daily_avg();
 		
 create trigger update_hourly_averages
 		before insert on meas_master
+		when (
+			extract(date from NEW.ts) = current_date
+			and
+			extract(hour from age(now(),NEW.ts)) < 20
+		)
 		for each row execute procedure update_hourly_avg(); 
 		
-create trigger stale_update_hourly_averages
-       before insert on meas_master
-       for each row 
-       when (
-       	    extract(hour from age(now(), NEW.ts)) > 20
-       	    and
-	    extract(day from age(now(), NEW.ts)) = 0
-	    and                            
-	    extract(hour from age(now(), NEW.ts)) = 0
-	    and
-	    extract(year from age(now(), NEW.ts)) = 0
-	    )   
-       execute procedure stale_update_hourly_avg();
-		
 create trigger update_minute_averages
-		before insert on meas_master
+		before insert on meas_master 
+		when (
+			extract(date from NEW.ts) = current_date
+			and
+			extract(hour from age(now(),NEW.ts)) = 0
+			and
+			extract(minute from age(now(),NEW.ts)) < 20
+		)
 		for each row execute procedure update_minute_avg();
-
-create trigger stale_update_minute_averages
-       before insert on meas_master
-       for each row 
-       when (
-       	    extract(minute from age(now(), NEW.ts)) > 20
-    	    and
-	    extract(day from age(now(), NEW.ts)) = 0
-	    and                            
-	    extract(hour from age(now(), NEW.ts)) = 0
-	    and
-	    extract(year from age(now(), NEW.ts)) = 0
-	    )
-       execute procedure stale_update_minute_avg();
 
 create trigger daily_routing
        before insert on daily_master
