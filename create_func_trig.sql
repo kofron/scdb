@@ -609,6 +609,18 @@ create trigger update_daily_averages
 			extract(day from age(now(), NEW.ts)) < 20
 		)
 		execute procedure update_daily_avg();  
+		
+-- update_stale_daily_averages (trigger)
+-- fires on STALE data, which is not FRESH data.  updates rows
+-- which are in the master table as opposed to the staging 
+-- table.
+create trigger update_stale_daily_averages
+		before insert on meas_master
+		for each row
+		when (
+			extract(day from age(now(), NEW.ts)) >= 20
+		)
+		execute procedure stale_update_daily_averages;
 
 -- update_hourly_averages (trigger)
 -- fires on FRESH data, which is defined as happening within
