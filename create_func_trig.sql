@@ -75,12 +75,14 @@ $$ language plpgsql;
 create or replace function hourly_table_routing()
        returns trigger as $$
        declare
-		year integer = extract(year from NEW.ts)::integer;
-		month integer = extract(month from NEW.ts)::integer;
+		year integer = extract(year from NEW.measdate)::integer;
+		month integer = extract(month from NEW.measdate)::integer;
 		tablename text = 'y' || year || 'm' || 'avgHour';
        begin	       
        		execute 'insert into'
+			|| ' '
 			|| tablename
+			|| ' '
 			|| 'values ('
 			|| NEW.*
 			|| ')';
@@ -96,14 +98,35 @@ $$ language plpgsql;
 create or replace function minute_table_routing()
        returns trigger as $$
        declare
-		year integer = extract(year from NEW.ts)::integer;
-		month integer = extract(month from NEW.ts)::integer;
-		tablename text = 'y' || year || 'm' || 'avgMinute';
+		year integer = extract(year from NEW.measdate)::integer;
+		month integer = extract(month from NEW.measdate)::integer;
+		tablename text = 'y' || year || 'm' || month || 'avgMinute';
        begin	       
-       		execute 'insert into'
+  		execute 'insert into'
+			|| ' '
 			|| tablename
+			|| '(ucount, hostname, card, channel, hr, min,'
+			|| 'measdate, minval, maxval, avgval) '
 			|| 'values ('
-			|| NEW.*
+			|| NEW.ucount
+			|| ','
+			|| quote_literal(NEW.hostname)
+			|| ','
+			|| quote_literal(NEW.card)
+			|| ','
+			|| NEW.channel
+			|| ','
+			|| NEW.hr
+			|| ','
+			|| NEW.min
+			|| ','
+			|| quote_literal(NEW.measdate)
+			|| ','
+			|| NEW.minval
+			|| ','
+			|| NEW.maxval
+			|| ','
+			|| NEW.avgval
 			|| ')';
 		return NULL;
        end
@@ -551,7 +574,7 @@ create or replace function flush_and_destroy_minute()
        begin
 		for srow in 
 		    select * from minute_avg_stage s
-  		    where extract(minute from age(now,s.measdate)) > 20
+  		    where extract(minute from age(now(),s.measdate)) > 20
 		loop
 		    begin  
 		    	   delete from 
