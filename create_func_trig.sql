@@ -595,6 +595,9 @@ create trigger master_routing
 	before insert on meas_master
 	for each row execute procedure master_table_routing();
 
+-- update_daily_averages (trigger)
+-- fires on FRESH data, which is defined as happening within
+-- 20 days of the current date. 
 create trigger update_daily_averages
 		before insert on meas_master
 		for each row 
@@ -606,7 +609,10 @@ create trigger update_daily_averages
 			extract(day from age(now(), NEW.ts)) < 20
 		)
 		execute procedure update_daily_avg();  
-		
+
+-- update_hourly_averages (trigger)
+-- fires on FRESH data, which is defined as happening within
+-- 20 hours of the current timestamp.
 create trigger update_hourly_averages
 		before insert on meas_master
 		for each row 
@@ -616,7 +622,10 @@ create trigger update_hourly_averages
 			extract(hour from age(now(),NEW.ts)) < 20
 		)
 		execute procedure update_hourly_avg(); 
-		
+
+-- update_minute_averages (trigger)
+-- fires on FRESH data, which is defined as happening within
+-- 20 minutes of the current timestamp.
 create trigger update_minute_averages
 		before insert on meas_master 
 		for each row 
