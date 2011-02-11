@@ -171,7 +171,68 @@ create or replace function update_daily_avg()
 		perform flush_and_destroy_daily();	
 		return NULL;
        end		    
-$$ language plpgsql; 
+$$ language plpgsql;  
+
+-- stale_update_daily_avg (function)
+-- STALE daily average update.  this performs *EXACTLY* the same
+-- function as above, but on stale (old, i.e. > 20 days) data.  
+-- god willing, it will never be used.
+create or replace function stale_update_daily_avg()
+       returns trigger as $$
+       declare
+		prow daily_master%ROWTYPE;
+		newday date = (NEW.ts)::date;
+		newc real;
+		newavg real;
+		newmin real;
+		newmax real;
+		oldc int;
+		oldavg real;
+       begin
+		-- Strategy:
+		-- Try to update a row.  If the row doesn't exist,
+		-- we create it instead.
+		select * into prow from daily_master stage where 
+		       (stage.measdate = newday 
+		       and
+		       stage.hostname = NEW.hostname
+		       and
+		       stage.card = NEW.card
+		       and 
+		       stage.channel = NEW.channel);
+		if not found then
+		   insert into 
+		   	  daily_master
+				(ucount,hostname,card,
+			  	channel,measdate,minval,maxval,avgval) 
+			  values
+				(1,NEW.hostname,NEW.card,
+				NEW.channel,newday,
+				NEW.value,NEW.value,NEW.value);
+		else
+			oldc   := prow.ucount;
+			oldavg := prow.avgval;
+			newc   := prow.ucount + 1;
+			newavg := ((oldc*oldavg)+NEW.value)/newc;
+			newmin := prow.minval;
+			newmax := prow.maxval;
+			if NEW.value < newmin then
+			   newmin := NEW.value;
+			elsif NEW.value > newmax then
+			   newmax := NEW.value;
+			end if;
+			update daily_master 
+			set
+				ucount	  = newc,
+				avgval    = newavg,
+				minval	  = newmin,
+				maxval	  = newmax
+			where	  
+				row_id = prow.row_id;
+		end if;
+		return NULL;
+       end		    
+$$ language plpgsql;
 
 -- update_hourly_avg (function)
 -- hourly version of update_daily_avg
@@ -234,7 +295,70 @@ create or replace function update_hourly_avg()
 		perform flush_and_destroy_hourly();	
 		return NEW;
        end		    
-$$ language plpgsql;  
+$$ language plpgsql; 
+
+-- stale_update_hourly_avg (function)
+-- stale_update_hourly_avg : update_hourly_avg :: 
+-- stale_update_daily_avg  : update_daily_avg
+create or replace function stale_update_hourly_avg()
+       returns trigger as $$
+       declare
+		prow hourly_master%ROWTYPE;
+		newday date = (NEW.ts)::date;
+		newhr  int = extract(hour from NEW.ts);
+		newc real;
+		newavg real;
+		newmin real;
+		newmax real;
+		oldc int;
+		oldavg real;
+       begin
+		-- Strategy:
+		-- Try to update a row.  If the row doesn't exist,
+		-- we create it instead.
+		select * into prow from hourly_master stage where 
+		       (stage.measdate = newday 
+		       and
+		       stage.hostname = NEW.hostname
+		       and
+		       stage.card = NEW.card
+		       and 
+		       stage.channel = NEW.channel
+			   and
+			   stage.hr = newhr);
+		if not found then
+		   insert into 
+		   	  hourly_master
+				(ucount,hostname,card,hour,
+			  	channel,measdate,minval,maxval,avgval) 
+			  values
+				(1,NEW.hostname,NEW.card,newhr,
+				NEW.channel,newday,
+				NEW.value,NEW.value,NEW.value);
+		else
+			oldc   := prow.ucount;
+			oldavg := prow.avgval;
+			newc   := prow.ucount + 1;
+			newavg := ((oldc*oldavg)+NEW.value)/newc;
+			newmin := prow.minval;
+			newmax := prow.maxval;
+			if NEW.value < newmin then
+			   newmin := NEW.value;
+			elsif NEW.value > newmax then
+			   newmax := NEW.value;
+			end if;
+			update hourly_master
+			set
+				ucount	  = newc,
+				avgval    = newavg,
+				minval	  = newmin,
+				maxval	  = newmax
+			where	  
+				row_id = prow.row_id;
+		end if;
+		return NEW;
+       end		    
+$$ language plpgsql;
 
 -- update_minute_avg (function)
 -- minute version of update_daily_avg
@@ -302,6 +426,71 @@ create or replace function update_minute_avg()
        end		    
 $$ language plpgsql;
 
+-- stale_update_minute_avg (function)
+-- same function as stale_update_daily_avg but applies to old
+-- minute data.
+create or replace function stale_update_minute_avg()
+       returns trigger as $$
+       declare
+		prow minute_master%ROWTYPE;
+		newday date = (NEW.ts)::date;
+		newhr  int = extract(hour from NEW.ts);
+		newmint int = extract(minute from NEW.ts);
+		newc real;
+		newavg real;
+		newmin real;
+		newmax real;
+		oldc int;
+		oldavg real;
+       begin
+		-- Strategy:
+		-- Try to update a row.  If the row doesn't exist,
+		-- we create it instead.
+		select * into prow from minute_master stage where 
+		       (stage.measdate = newday 
+		       and
+		       stage.hostname = NEW.hostname
+		       and
+		       stage.card = NEW.card
+		       and 
+		       stage.channel = NEW.channel
+			   and
+			   stage.min = newmint
+			   and
+			   stage.hr = newhr);
+		if not found then
+		   insert into 
+		   	  minute_master
+				(ucount,hostname,card,hr,min,
+			  	channel,measdate,minval,maxval,avgval) 
+			  values
+				(1,NEW.hostname,NEW.card,newhr,newmint,
+				NEW.channel,newday,
+				NEW.value,NEW.value,NEW.value);
+		else
+			oldc   := prow.ucount;
+			oldavg := prow.avgval;
+			newc   := prow.ucount + 1;
+			newavg := ((oldc*oldavg)+NEW.value)/newc;
+			newmin := prow.minval;
+			newmax := prow.maxval;
+			if NEW.value < newmin then
+			   newmin := NEW.value;
+			elsif NEW.value > newmax then
+			   newmax := NEW.value;
+			end if;
+			update minute_master
+			set
+				ucount	  = newc,
+				avgval    = newavg,
+				minval	  = newmin,
+				maxval	  = newmax
+			where	  
+				row_id = prow.row_id;
+		end if;
+		return NEW;
+       end		    
+$$ language plpgsql;
 
 -- flush_and_destroy_x (functions)
 -- these are functions that scans the x_avg_stage tables for stale
