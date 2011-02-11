@@ -620,7 +620,7 @@ create trigger update_stale_daily_averages
 		when (
 			extract(day from age(now(), NEW.ts)) >= 20
 		)
-		execute procedure stale_update_daily_averages;
+		execute procedure stale_update_daily_averages();
 
 -- update_hourly_averages (trigger)
 -- fires on FRESH data, which is defined as happening within
