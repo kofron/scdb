@@ -601,6 +601,8 @@ create trigger update_daily_averages
 		when (
 			extract(year from age(now(),NEW.ts)) = 0
 			and
+			extract(month from age(now(), NEW.ts)) = 0
+			and
 			extract(day from age(now(), NEW.ts)) < 20
 		)
 		execute procedure update_daily_avg();  
