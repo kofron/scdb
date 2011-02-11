@@ -574,38 +574,42 @@ create trigger master_routing
 
 create trigger update_daily_averages
        before insert on meas_master
-       for each row execute procedure update_daily_avg()
-	   when (
-			extract(day from age(now(), NEW.ts) > 20
-			and
-			extract(year from age(now(), NEW.ts) = 0)
-			);
+       for each row 
+       when (
+       	    extract(day from age(now(), NEW.ts)) > 20
+	    and
+	    extract(year from age(now(), NEW.ts)) = 0
+	    )
+       execute procedure update_daily_avg();
 
 create trigger update_hourly_averages
        before insert on meas_master
-       for each row execute procedure update_hourly_avg()
-	   when (
-			extract(hour from age(now(), NEW.ts)) > 20
-			and
-			extract(day from age(now(), NEW.ts)) = 0
-			and                            
-			extract(hour from age(now(), NEW.ts)) = 0
-			and
-			extract(year from age(now(), NEW.ts)) = 0
-			);   
+       for each row 
+       when (
+       	    extract(hour from age(now(), NEW.ts)) > 20
+       	    and
+	    extract(day from age(now(), NEW.ts)) = 0
+	    and                            
+	    extract(hour from age(now(), NEW.ts)) = 0
+	    and
+	    extract(year from age(now(), NEW.ts)) = 0
+	    )   
+       execute procedure update_hourly_avg();
+
 
 create trigger update_minute_averages
        before insert on meas_master
-       for each row execute procedure update_minute_avg()
-	   when (
-			extract(minute from age(now(), NEW.ts)) > 20
-    		and
-			extract(day from age(now(), NEW.ts)) = 0
-			and                            
-			extract(hour from age(now(), NEW.ts)) = 0
-			and
-			extract(year from age(now(), NEW.ts)) = 0
-			);
+       for each row 
+       when (
+       	    extract(minute from age(now(), NEW.ts)) > 20
+    	    and
+	    extract(day from age(now(), NEW.ts)) = 0
+	    and                            
+	    extract(hour from age(now(), NEW.ts)) = 0
+	    and
+	    extract(year from age(now(), NEW.ts)) = 0
+	    )
+       execute procedure update_minute_avg();
 
 create trigger daily_routing
        before insert on daily_master
