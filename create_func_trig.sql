@@ -445,7 +445,7 @@ create or replace function update_minute_avg()
 				row_id = prow.row_id;
 		end if;
 		perform flush_and_destroy_minute();	
-		return NEW;
+		return NULL;
        end		    
 $$ language plpgsql;
 
