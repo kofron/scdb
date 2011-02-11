@@ -670,6 +670,26 @@ create trigger update_minute_averages
 			extract(minute from age(now(),NEW.ts)) < 20
 		)
 		execute procedure update_minute_avg();
+		
+-- update_stale_minute_averages (trigger)
+-- fires on STALE data, which is defined as older than 20 minutes.
+-- if the hour or day or year or month has changed, it's definitely
+-- older than 20 minutes.
+create trigger update_stale_minute_averages
+	before insert on meas_master
+	for each row
+	when (
+		extract(minute from age(now(), NEW.ts)) >= 20
+		or
+		extract(hour from age(now(), NEW.ts)) != 0
+		or
+		extract(day from age(now(), NEW.ts)) != 0
+		or
+		extract(month from age(now(), NEW.ts)) != 0
+		or
+		extract(year from age(now(), NEW.ts)) != 0
+	)
+	execute procedure stale_update_minute_avg();
 
 create trigger daily_routing
        before insert on daily_master
