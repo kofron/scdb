@@ -507,7 +507,7 @@ create or replace function flush_and_destroy_daily()
        begin
 		for srow in 
 		    select * from daily_avg_stage s
-  		    where extract(day from age(s.measdate)) < -20
+  		    where extract(day from age(now(),s.measdate)) > 20
 		loop
 		    begin  
 		    	   delete from 
@@ -529,7 +529,7 @@ create or replace function flush_and_destroy_hourly()
        begin
 		for srow in 
 		    select * from hourly_avg_stage s
-  		    where extract(hour from age(s.measdate)) < -20
+  		    where extract(hour from age(now(),s.measdate)) > 20
 		loop
 		    begin  
 		    	   delete from 
@@ -551,7 +551,7 @@ create or replace function flush_and_destroy_minute()
        begin
 		for srow in 
 		    select * from minute_avg_stage s
-  		    where extract(minute from age(s.measdate)) < -20
+  		    where extract(minute from age(now,s.measdate)) > 20
 		loop
 		    begin  
 		    	   delete from 
@@ -574,15 +574,38 @@ create trigger master_routing
 
 create trigger update_daily_averages
        before insert on meas_master
-       for each row execute procedure update_daily_avg();
+       for each row execute procedure update_daily_avg()
+	   when (
+			extract(day from age(now(), NEW.ts) > 20
+			and
+			extract(year from age(now(), NEW.ts) = 0)
+			);
 
 create trigger update_hourly_averages
        before insert on meas_master
-       for each row execute procedure update_hourly_avg();
+       for each row execute procedure update_hourly_avg()
+	   when (
+			extract(hour from age(now(), NEW.ts)) > 20
+			and
+			extract(day from age(now(), NEW.ts)) = 0
+			and                            
+			extract(hour from age(now(), NEW.ts)) = 0
+			and
+			extract(year from age(now(), NEW.ts)) = 0
+			);   
 
 create trigger update_minute_averages
        before insert on meas_master
-       for each row execute procedure update_minute_avg();
+       for each row execute procedure update_minute_avg()
+	   when (
+			extract(minute from age(now(), NEW.ts)) > 20
+    		and
+			extract(day from age(now(), NEW.ts)) = 0
+			and                            
+			extract(hour from age(now(), NEW.ts)) = 0
+			and
+			extract(year from age(now(), NEW.ts)) = 0
+			);
 
 create trigger daily_routing
        before insert on daily_master
