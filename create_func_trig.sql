@@ -253,7 +253,7 @@ create or replace function stale_update_daily_avg()
 			where	  
 				row_id = prow.row_id;
 		end if;
-		return NULL;
+		return NEW;
        end		    
 $$ language plpgsql;
 
@@ -619,6 +619,10 @@ create trigger update_stale_daily_averages
 		for each row
 		when (
 			extract(day from age(now(), NEW.ts)) >= 20
+			or
+			extract(year from age(now(), NEW.ts)) != 0
+			or
+			extract(month from age(now(), NEW.ts)) != 0
 		)
 		execute procedure stale_update_daily_avg();
 
