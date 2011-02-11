@@ -637,7 +637,24 @@ create trigger update_hourly_averages
 			and
 			extract(hour from age(now(),NEW.ts)) < 20
 		)
-		execute procedure update_hourly_avg(); 
+		execute procedure update_hourly_avg();
+		
+-- update_stale_hourly_averages (trigger)
+-- fires on STALE data, which is defined as being older than
+-- 20 hours.  If more than 20 hours has passed the data was taken
+-- or the day part of the age is not zero (or the month or the year
+-- parts), fire the trigger to update stale hourly data.
+create trigger update_stale_hourly_averages
+	before insert on meas_master
+	for each row
+	when (
+		extract(hour from age(now(),NEW.ts)) >= 20
+		or
+		extract(day from age(now(),NEW.ts)) != 0
+		or
+		extract(year from age(now(),NEW.ts)) != 0
+	)
+	execute procedure stale_update_hourly_avg();
 
 -- update_minute_averages (trigger)
 -- fires on FRESH data, which is defined as happening within
