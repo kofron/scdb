@@ -290,11 +290,17 @@ def main(sysargs):
         # emit daily average staging area
         outfile.write(emit_daily_stage_table()+"\n")
 
-    # emit hourly master table
+        # emit hourly master table
 	outfile.write(emit_hourly_avg_table()+"\n")                
+
+        # emit hourly average staging area
+        outfile.write(emit_hourly_stage_table()+"\n")
 
 	# emit minute master table
 	outfile.write(emit_minute_avg_table()+"\n")
+
+        # emit minute average staging area
+        outfile.write(emit_minute_stage_table()+"\n")
 
 	for year in range(year_begin, year_end + 1):
 		# emit daily avg partitions
