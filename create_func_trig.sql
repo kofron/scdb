@@ -352,7 +352,7 @@ create or replace function stale_update_hourly_avg()
 		if not found then
 		   insert into 
 		   	  hourly_master
-				(ucount,hostname,card,hour,
+				(ucount,hostname,card,hr,
 			  	channel,measdate,minval,maxval,avgval) 
 			  values
 				(1,NEW.hostname,NEW.card,newhr,
