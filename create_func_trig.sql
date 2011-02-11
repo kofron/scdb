@@ -573,6 +573,10 @@ create trigger master_routing
 	for each row execute procedure master_table_routing();
 
 create trigger update_daily_averages
+		before insert on meas_master
+		for each row execute procedure update_daily_avg();  
+		
+create trigger stale_update_daily_averages
        before insert on meas_master
        for each row 
        when (
@@ -580,9 +584,13 @@ create trigger update_daily_averages
 	    and
 	    extract(year from age(now(), NEW.ts)) = 0
 	    )
-       execute procedure update_daily_avg();
-
+       execute procedure stale_update_daily_avg();
+		
 create trigger update_hourly_averages
+		before insert on meas_master
+		for each row execute procedure update_hourly_avg(); 
+		
+create trigger stale_update_hourly_averages
        before insert on meas_master
        for each row 
        when (
@@ -594,10 +602,13 @@ create trigger update_hourly_averages
 	    and
 	    extract(year from age(now(), NEW.ts)) = 0
 	    )   
-       execute procedure update_hourly_avg();
-
-
+       execute procedure stale_update_hourly_avg();
+		
 create trigger update_minute_averages
+		before insert on meas_master
+		for each row execute procedure update_minute_avg();
+
+create trigger stale_update_minute_averages
        before insert on meas_master
        for each row 
        when (
@@ -609,8 +620,12 @@ create trigger update_minute_averages
 	    and
 	    extract(year from age(now(), NEW.ts)) = 0
 	    )
-       execute procedure update_minute_avg();
+       execute procedure stale_update_minute_avg();
 
 create trigger daily_routing
        before insert on daily_master
        for each row execute procedure daily_table_routing();
+
+create trigger minute_routing
+	before insert on minute_master
+	for each row execute procedure minute_table_routing();
