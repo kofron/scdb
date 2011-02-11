@@ -169,7 +169,7 @@ create or replace function update_daily_avg()
 				row_id = prow.row_id;
 		end if;
 		perform flush_and_destroy_daily();	
-		return NULL;
+		return NEW;
        end		    
 $$ language plpgsql; 
 
@@ -204,7 +204,7 @@ create or replace function update_hourly_avg()
 		if not found then
 		   insert into 
 		   	  hourly_avg_stage
-				(ucount,hostname,card,hour,
+				(ucount,hostname,card,hr,
 			  	channel,measdate,minval,maxval,avgval) 
 			  values
 				(1,NEW.hostname,NEW.card,newhr,
